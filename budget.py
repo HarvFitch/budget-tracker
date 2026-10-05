@@ -6,30 +6,53 @@ expenses = []
 budget = 0
 
 class Expenditure:
-    def __init__(self, category, cost):
+    def __init__(self, category, cost, itemType):
         self.category = category
         self.cost = cost
+        self.itemType = itemType
 
     
 def show_summary(expenses, budget, allowed_categories):
     total = 0
 
-    for expense in expenses:
-        total += expense.cost
-    print(f"Monthly Budget: £{budget:.2f}")
-    print(f"Total expenditure: £{total:.2f}")
-    difference = budget - total
-    print(f"You have £{difference:.2f} left of your monthly budget")
+    while True:
+        breakdown = input("Would you like a full breakdown of your expenditure? (yes/no)").lower()
+        if (breakdown == "yes"):
+            advanced_summary(expenses)
+            break
+        elif (breakdown == "no"):
+            for expense in expenses:
+                total += expense.cost
+            print(f"Monthly Budget: £{budget:.2f}")
+            print(f"Total expenditure: £{total:.2f}")
+            difference = budget - total
+            print(f"You have £{difference:.2f} left of your monthly budget")
 
-    #budget breakdown
-    for category in allowed_categories:
-        category_total = 0
+            #budget breakdown
+            for category in allowed_categories:
+                category_total = 0
+                for expense in expenses:
+                    if expense.category == category:
+                        category_total += expense.cost
+                if(category_total >0):
+                    print(f"{category}: £{category_total:.2f}")
+            return
+        else: 
+            print("That is not an option, please review the options")
+
+def advanced_summary(expenses):
+    for eachCategory in ALLOWED_CATEGORIES:
+        itemCount = 0
+        categoryItems = []
         for expense in expenses:
-            if expense.category == category:
-                category_total += expense.cost
-        if(category_total >0):
-            print(f"{category}: £{category_total:.2f}")
-
+            if expense.category == eachCategory:
+                itemCount += 1
+                categoryItems.append(f"{expense.itemType}~ £{expense.cost}")
+        if itemCount > 0:
+            print(f"\n{eachCategory}:")
+            for item in categoryItems:
+                print(item)       
+        
 def checkMax(expenses, newExpense, budget):
     total = 0
     for expense in expenses:
@@ -64,9 +87,10 @@ def addSpending(expenses, budget, allowed_categories):
             else:
                 if checkMax(expenses, spending, budget):
                     while True:
+                        specificItem = input("Enter the name of the expense: ")
                         spendingType = input("Enter the expenditure type (pick from either food, vehicle, house, utilities or leisure)").lower()
                         if(spendingType in allowed_categories):
-                            new_expense = Expenditure(spendingType, spending)
+                            new_expense = Expenditure(spendingType, spending, specificItem)
                             expenses.append(new_expense)
                             itemAdded = True
                             break
@@ -82,27 +106,30 @@ def fileSave(expenses, budget):
     }
 
     for expense in expenses:
-        tempdict = {"category": expense.category, "cost": expense.cost}
+        tempdict = {"category": expense.category, "item": expense.itemType, "cost": expense.cost}
         expenseDictionary["expenses"].append(tempdict)
 
     with open(DATA_FILE, "w") as f:
         json.dump(expenseDictionary, f, indent=4)
 
 def fileOpen(expenses, budget):
-    previousUser = input("Do you have a saved file? (yes/no)").lower()
-    if(previousUser == "yes"):
-        with open(DATA_FILE, "r") as f:
-            data = json.load(f)
-            budget = data["budget"]
-            expenses = []
-            for items in data["expenses"]:
-                new_obj = Expenditure(items["category"], items["cost"])
-                expenses.append(new_obj)
-            return budget, expenses
-
-    else:
-        budget = inputBudget()
-        return budget, []
+    while True:
+        previousUser = input("Do you have a saved file? (yes/no)").lower()
+        if(previousUser == "yes"):
+            with open(DATA_FILE, "r") as f:
+                data = json.load(f)
+                budget = data["budget"]
+                expenses = []
+                for items in data["expenses"]:
+                    new_obj = Expenditure(items["category"], items["cost"], items["item"])
+                    expenses.append(new_obj)
+                return budget, expenses
+        
+        elif (previousUser == "no"):
+            budget = inputBudget()
+            return budget, []
+        else:
+            print("That's not an option, please check optiions! ")
 
 budget, expenses = fileOpen(budget, expenses)
 
